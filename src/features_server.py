@@ -32,7 +32,8 @@ class TileUtils:
 
 class Rect:
     """
-    Свалка функций для работы с прямоугольниками
+    Свалка функций для работы с прямоугольниками.
+    TODO: учесть случай, когда страна переваливает через 0, типа России
     """
     @staticmethod
     def range_overlap(a_min, a_max, b_min, b_max):
@@ -42,10 +43,19 @@ class Rect:
         return not ((a_min > b_max) or (b_min > a_max))
 
     @staticmethod
+    def validate_range(min, max):
+        if min > max:
+            raise ValueError('min > max')
+
+    @staticmethod
     def overlap(r1, r2):
         """
         Overlapping rectangles overlap both horizontally & vertically
         """
+        Rect.validate_range(r1[0], r1[2])
+        Rect.validate_range(r1[1], r1[3])
+        Rect.validate_range(r2[0], r2[2])
+        Rect.validate_range(r2[1], r2[3])
         return Rect.range_overlap(r1[0], r1[2], r2[0], r2[2]) and Rect.range_overlap(r1[1], r1[3], r2[1], r2[3])
 
 
