@@ -4,6 +4,9 @@ from bottle import route, run, static_file
 
 
 class Geometry(dict):
+    """
+    Геометрия в смысле шейпфайла, фигура на карте.
+    """
     def __init__(self, geo_interface):
         super().__init__(**geo_interface)
         self.type = geo_interface['type']
@@ -100,6 +103,7 @@ def read_shapefile_features():
     return features
 
 
+
 features = read_shapefile_features()
 
 
@@ -137,7 +141,7 @@ class Rect:
     @staticmethod
     def range_overlap(a_min, a_max, b_min, b_max):
         """
-        Neither range is completely greater than the other
+        Ни один диапазон не строго больше или правее другого
         """
         return not ((a_min > b_max) or (b_min > a_max))
 
@@ -159,6 +163,9 @@ def server_static(filename):
 
 @route('/geojson/<zoom:int>/<x:int>/<y:int>.json')
 def geojson(zoom, x, y):
+    """
+    Отдаёт только нужный geojson стран, которые стоят в определённом сегменте карты leаflet
+    """
     bbox = TileUtils.get_tile_bbox(x, y, zoom)
     matching_features = [dict(f.__dict__) for f in features if Rect.overlap(f.geometry.bbox, bbox)]
 
