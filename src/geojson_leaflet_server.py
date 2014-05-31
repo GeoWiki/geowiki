@@ -73,7 +73,6 @@ class Geometry(dict):
         return result_multi_polygons
 
 
-
 class Feature:
     def __init__(self, geo_interface, name):
         self.geometry = Geometry(geo_interface)
@@ -83,28 +82,6 @@ class Feature:
         self.properties = {
             "name": name
         }
-
-
-def read_shapefile_features():
-    print('Reading features, calculating bboxes...')
-    sf = shapefile.Reader("../shapes_files/ne_10m_admin_0_countries")
-
-    field_names = [f[0] for f in sf.fields[1:]]
-    name_field_index = field_names.index('NAME')
-    assert name_field_index
-
-    features = []
-
-    for s, r in zip(sf.shapes(), sf.records()):
-        gi = s.__geo_interface__
-        features.append(Feature(gi, str(r[name_field_index])))
-
-    print('Done, features read: ', len(features))
-    return features
-
-
-
-features = read_shapefile_features()
 
 
 class TileUtils:
@@ -153,6 +130,35 @@ class Rect:
         return Rect.range_overlap(r1[0], r1[2], r2[0], r2[2]) and Rect.range_overlap(r1[1], r1[3], r2[1], r2[3])
 
 
+class FeaturesServer:
+    def __init__(self):
+        self.features = self.read_shapefile_features()
+
+    def read_shapefile_features(self):
+        print('Reading features, calculating bboxes...')
+        sf = shapefile.Reader("../shapes_files/ne_10m_admin_0_countries")
+
+        field_names = [f[0] for f in sf.fields[1:]]
+        name_field_index = field_names.index('NAME')
+        assert name_field_index
+
+        features = []
+
+        for s, r in zip(sf.shapes(), sf.records()):
+            gi = s.__geo_interface__
+            features.append(Feature(gi, str(r[name_field_index])))
+
+        print('Done, features read: ', len(features))
+        return features
+
+    def get_features_in_bbox(self, bbox):
+        matching_features = [dict(f.__dict__) for f in self.features if Rect.overlap(f.geometry.bbox, bbox)]
+        return matching_features
+
+
+features = FeaturesServer()
+
+
 @route('/')
 def server_static():
     return static_file('index.html', root='../html_sample')
@@ -167,7 +173,7 @@ def geojson(zoom, x, y):
     Отдаёт только нужный geojson стран, которые стоят в определённом сегменте карты leаflet
     """
     bbox = TileUtils.get_tile_bbox(x, y, zoom)
-    matching_features = [dict(f.__dict__) for f in features if Rect.overlap(f.geometry.bbox, bbox)]
+    matching_features = features.get_features_in_bbox(bbox)
 
     too_close = TileUtils.degrees_in_pixel(zoom) * 4
 
