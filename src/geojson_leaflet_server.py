@@ -33,4 +33,8 @@ def geojson(zoom, x, y):
         "features": matching_features
     }
 
+@route('/country-geojson/<name>')
+def get_country_feature(name):
+    return features_server.get_country_feature(name)
+
 run(host='localhost', port=8809)
